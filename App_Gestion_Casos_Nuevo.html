@@ -1,0 +1,341 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Casos</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Barra Lateral */
+        .sidebar {
+            width: 250px;
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+        }
+
+        .sidebar h2 {
+            font-size: 24px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .sidebar a {
+            display: block;
+            color: white;
+            padding: 10px;
+            text-decoration: none;
+            margin: 5px 0;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar a:hover {
+            background-color: #575757;
+        }
+
+        /* Contenedor principal */
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            padding-left: 30px;
+            padding-right: 30px;
+            flex-grow: 1;
+        }
+
+        /* Formulario */
+        .form-container {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        .form-container label {
+            font-size: 16px;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Contenedor de las listas de casos */
+        .cases-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .case-list {
+            width: 45%;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-left: 20px;
+            margin-right: 20px;
+            display: none; /* Initially hidden */
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            background-color: #e0e0e0;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background-color: #e0e0e0;
+            margin-top: 5px;
+        }
+
+        .progress-bar-inner {
+            height: 100%;
+            border-radius: 5px;
+        }
+
+        .implemented {
+            background-color: #4CAF50;
+        }
+
+        .in-progress {
+            background-color: #FFA500;
+        }
+
+        /* Resumen */
+        .summary {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        .delete-btn {
+            background-color: #FF6347;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .delete-btn:hover {
+            background-color: #FF4500;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barra Lateral -->
+    <div class="sidebar">
+        <h2>Gestión de Casos</h2>
+        <a href="#" id="showImplementados">Casos Implementados</a>
+        <a href="#" id="showEnProgreso">Casos En Progreso</a>
+        <a href="#">Agregar Caso</a>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="main-content">
+        <!-- Formulario para agregar casos -->
+        <div class="form-container">
+            <h2>Agregar Caso</h2>
+            <form id="case-form">
+                <label for="numeroCaso">Número del Caso:</label>
+                <input type="number" id="numeroCaso" required>
+
+                <label for="estadoCaso">Estado del Caso:</label>
+                <select id="estadoCaso" required>
+                    <option value="in-progress">En Progreso</option>
+                    <option value="implemented">Implementado</option>
+                </select>
+
+                <button type="submit">Agregar Caso</button>
+            </form>
+        </div>
+
+        <!-- Contenedor de los casos -->
+        <div class="cases-container">
+            <!-- Casos Implementados -->
+            <div class="case-list" id="implementados">
+                <h3>Casos Implementados</h3>
+                <ul id="implementados-list"></ul>
+            </div>
+
+            <!-- Casos en Progreso -->
+            <div class="case-list" id="en-progreso">
+                <h3>Casos En Progreso</h3>
+                <ul id="en-progreso-list"></ul>
+            </div>
+        </div>
+
+        <!-- Resumen del progreso -->
+        <div class="summary">
+            <h3>Resumen del Progreso</h3>
+            <p>Porcentaje de Implementados: <span id="implementados-percent">0%</span></p>
+            <p>Porcentaje de En Progreso: <span id="in-progress-percent">0%</span></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const implementadosList = document.getElementById('implementados-list');
+            const enProgresoList = document.getElementById('en-progreso-list');
+            const implementadosPercent = document.getElementById('implementados-percent');
+            const inProgressPercent = document.getElementById('in-progress-percent');
+
+            const showImplementadosBtn = document.getElementById('showImplementados');
+            const showEnProgresoBtn = document.getElementById('showEnProgreso');
+            const implementadosContainer = document.getElementById('implementados');
+            const enProgresoContainer = document.getElementById('en-progreso');
+
+            let casos = [];
+
+            function crearCasoHTML(caso) {
+                const li = document.createElement('li');
+                li.innerHTML = `Caso ${caso.numero} - ${caso.estado}`;
+
+                const progressBar = document.createElement('div');
+                progressBar.classList.add('progress-bar');
+                const progressBarInner = document.createElement('div');
+                progressBarInner.classList.add('progress-bar-inner');
+                
+                if (caso.estado === 'implemented') {
+                    progressBarInner.classList.add('implemented');
+                    progressBarInner.style.width = '100%';
+                } else if (caso.estado === 'in-progress') {
+                    progressBarInner.classList.add('in-progress');
+                    progressBarInner.style.width = '50%';
+                }
+                
+                progressBar.appendChild(progressBarInner);
+                li.appendChild(progressBar);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('delete-btn');
+                deleteButton.textContent = 'Eliminar';
+                deleteButton.onclick = function() {
+                    eliminarCaso(caso.numero);
+                };
+                li.appendChild(deleteButton);
+
+                return li;
+            }
+
+            function agregarCaso(caso) {
+                casos.push(caso);
+                if (caso.estado === 'implemented') {
+                    implementadosList.appendChild(crearCasoHTML(caso));
+                } else if (caso.estado === 'in-progress') {
+                    enProgresoList.appendChild(crearCasoHTML(caso));
+                }
+                actualizarResumen();
+            }
+
+            function eliminarCaso(numero) {
+                casos = casos.filter(caso => caso.numero !== numero);
+                renderizarCasos();
+                actualizarResumen();
+            }
+
+            function renderizarCasos() {
+                implementadosList.innerHTML = '';
+                enProgresoList.innerHTML = '';
+                casos.forEach(caso => {
+                    if (caso.estado === 'implemented') {
+                        implementadosList.appendChild(crearCasoHTML(caso));
+                    } else {
+                        enProgresoList.appendChild(crearCasoHTML(caso));
+                    }
+                });
+            }
+
+            function actualizarResumen() {
+                const totalCasos = casos.length;
+                const implementados = casos.filter(caso => caso.estado === 'implemented').length;
+                const enProgreso = casos.filter(caso => caso.estado === 'in-progress').length;
+
+                const porcentajeImplementados = totalCasos ? (implementados / totalCasos) * 100 : 0;
+                const porcentajeEnProgreso = totalCasos ? (enProgreso / totalCasos) * 100 : 0;
+
+                implementadosPercent.textContent = `${porcentajeImplementados.toFixed(2)}%`;
+                inProgressPercent.textContent = `${porcentajeEnProgreso.toFixed(2)}%`;
+            }
+
+            function mostrarCasos(estado) {
+                implementadosContainer.style.display = estado === 'implemented' ? 'block' : 'none';
+                enProgresoContainer.style.display = estado === 'in-progress' ? 'block' : 'none';
+            }
+
+            showImplementadosBtn.addEventListener('click', function() {
+                mostrarCasos('implemented');
+            });
+
+            showEnProgresoBtn.addEventListener('click', function() {
+                mostrarCasos('in-progress');
+            });
+
+            const form = document.getElementById('case-form');
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const numeroCaso = document.getElementById('numeroCaso').value;
+                const estadoCaso = document.getElementById('estadoCaso').value;
+
+                const nuevoCaso = {
+                    numero: numeroCaso,
+                    estado: estadoCaso
+                };
+
+                agregarCaso(nuevoCaso);
+                form.reset();
+            });
+        });
+    </script>
+
+</body>
+</html>
